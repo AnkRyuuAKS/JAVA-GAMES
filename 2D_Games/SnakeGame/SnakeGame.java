@@ -4,7 +4,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
-public class AutoSnakeGame extends JPanel implements ActionListener {
+public class SnakeGame extends JPanel implements ActionListener {
     private static final int WIDTH = 600;
     private static final int HEIGHT = 400;
     private static final int UNIT_SIZE = 20;
@@ -35,7 +35,7 @@ public class AutoSnakeGame extends JPanel implements ActionListener {
 
             Point nextPos = new Point(nextX, nextY);
 
-            // Avoid self and other snake collisions
+            // Collision avoidance
             if (body.contains(nextPos) || otherSnakeBody.contains(nextPos)
                 || nextX < 0 || nextX >= WIDTH / UNIT_SIZE || nextY < 0 || nextY >= HEIGHT / UNIT_SIZE) {
 
@@ -71,7 +71,7 @@ public class AutoSnakeGame extends JPanel implements ActionListener {
         }
     }
 
-    public AutoSnakeGame() {
+    public SnakeGame() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(Color.BLACK);
 
@@ -93,19 +93,23 @@ public class AutoSnakeGame extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        snake1.move(prey, snake2.body);
-        snake2.move(prey, snake1.body);
+        if (timer.isRunning()) {
+            snake1.move(prey, snake2.body);
+            snake2.move(prey, snake1.body);
 
-        if (snake1.body.getFirst().equals(prey) || snake2.body.getFirst().equals(prey)) {
-            spawnPrey();
+            // Check if any snake eats prey
+            if (snake1.body.getFirst().equals(prey) || snake2.body.getFirst().equals(prey)) {
+                spawnPrey();
+            }
+
+            // Check for game over conditions
+            if (snake1.collidesWith(snake2) || snake2.collidesWith(snake1)
+                || snake1.body.getFirst().equals(snake2.body.getFirst())) {
+                timer.stop();
+            }
+
+            repaint();
         }
-
-        if (snake1.collidesWith(snake2) || snake2.collidesWith(snake1)
-            || snake1.body.getFirst().equals(snake2.body.getFirst())) {
-            timer.stop();
-        }
-
-        repaint();
     }
 
     @Override
@@ -116,38 +120,40 @@ public class AutoSnakeGame extends JPanel implements ActionListener {
         g.setColor(Color.RED);
         g.fillOval(prey.x * UNIT_SIZE, prey.y * UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
 
-        // Draw snakes
+        // Draw snake 1
         g.setColor(snake1.color);
         for (Point p : snake1.body) {
             g.fillRect(p.x * UNIT_SIZE, p.y * UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
         }
 
+        // Draw snake 2
         g.setColor(snake2.color);
         for (Point p : snake2.body) {
             g.fillRect(p.x * UNIT_SIZE, p.y * UNIT_SIZE, UNIT_SIZE, UNIT_SIZE);
         }
 
-        // Display scores
+        // Draw scores
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("Snake 1 (Green): " + snake1.score, 10, 20);
         g.drawString("Snake 2 (Blue): " + snake2.score, WIDTH - 180, 20);
 
-        // Display Game Over message
+        // Draw Game Over
         if (!timer.isRunning()) {
             g.setColor(Color.YELLOW);
             g.setFont(new Font("Arial", Font.BOLD, 36));
-            g.drawString("Game Over!", WIDTH / 2 - 100, HEIGHT / 2);
+            g.drawString("GAME OVER!", WIDTH / 2 - 120, HEIGHT / 2);
         }
     }
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Autonomous Competitive Snake Game");
-        AutoSnakeGame gamePanel = new AutoSnakeGame();
+        SnakeGame gamePanel = new SnakeGame();
         frame.add(gamePanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setLocationRelativeTo(null);
+        frame.setResizable(false);
         frame.setVisible(true);
     }
 }
